@@ -1,52 +1,79 @@
 <script lang="ts">
-    let { buffer }: { buffer: AudioBuffer } = $props()
+  import { effect$anim, effect$debounce } from "$lib/effect-anim.svelte";
+
+    let { audioContext, node, fn }: { audioContext: AudioContext, node :AudioNode , fn : string} = $props()
     let canvas: HTMLCanvasElement
     let canvasCircle: HTMLCanvasElement
-    let period = $state(44000)
+    let period = $state(1000)
     
-    $effect(() => {
+    const analyser = audioContext.createAnalyser();
+    node.connect(analyser);
+
+    let buffer = $state<Float32Array | undefined>()
+
+    effect$debounce(() => {
+        fn;
+        return () => {
+            analyser.fftSize = 32768
+            const bufferLength = analyser.fftSize;
+            const data = new Float32Array(bufferLength)
+            analyser.getFloatTimeDomainData(data)
+            buffer = data
+            console.log(buffer)
+        }
+    }, 1000)
+
+    effect$anim(() => {
+        fn
+        if (!buffer) return
         const ctx = canvas.getContext("2d")
         
         const ctxCircle = canvasCircle.getContext("2d")
         const radiusMax = canvasCircle.width/2
         const center = canvasCircle.width/2
 
-        if (!ctx || !ctxCircle || !buffer) {
+        if (!ctx || !ctxCircle) {
             return
         }
-    
-        const data = buffer.getChannelData(0)
-    
-        // Clear the canvas before drawing
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
-        ctxCircle.clearRect(0, 0, canvasCircle.width, canvasCircle.height)
-    
-        ctx.beginPath()
-        ctxCircle.beginPath()
 
+        const currentPeriod = period
 
-        for (let index = 0; index < period && index < data.length; index++) {
-            const element = data[index]
-            const xpos = (canvas.width * index) / period
-            const ypos = (canvas.height / 2) - ((canvas.height / 2) * element)
+        return () => {
+            console.log('analysing..')
+            if (!buffer) return
+        
+            // Clear the canvas before drawing
+            ctx.clearRect(0, 0, canvas.width, canvas.height)
+            ctxCircle.clearRect(0, 0, canvasCircle.width, canvasCircle.height)
+        
+            ctx.beginPath()
+            ctxCircle.beginPath()
 
-            const radianForEach = 2*Math.PI / period
+            for (let index = 0; index < currentPeriod && index < buffer.length; index++) {
+                const element = buffer[index]
+                const xpos = (canvas.width * index) / currentPeriod
+                const ypos = (canvas.height / 2) - ((canvas.height / 2) * element)
 
-            const direction = [Math.cos(radianForEach*index)*radiusMax*element+center, Math.sin(radianForEach*index)*radiusMax*element+center] as const
-            if (index === 0) {
-                ctx.moveTo(xpos, ypos)
-                ctxCircle.moveTo(...direction)
-            } else {
-                ctx.lineTo(xpos, ypos)
-                ctxCircle.lineTo(...direction)
+                const radianForEach = 2*Math.PI / currentPeriod
+
+                const direction = [Math.cos(radianForEach*index)*radiusMax*element+center, Math.sin(radianForEach*index)*radiusMax*element+center] as const
+                if (index === 0) {
+                    ctx.moveTo(xpos, ypos)
+                    ctxCircle.moveTo(...direction)
+                } else {
+                    ctx.lineTo(xpos, ypos)
+                    ctxCircle.lineTo(...direction)
+                }
             }
+
+
+            ctx.stroke()
+            ctxCircle.lineWidth=2
+            ctxCircle.stroke()
         }
-
-
-        ctx.stroke()
-        ctxCircle.stroke()
     })
     </script>
     <canvas bind:this={canvas} width="500" height="200"></canvas>
-    <canvas bind:this={canvasCircle} width="200" height="200"></canvas>
-<input type="range" bind:value={period} step="1" min="1" max="88000" />
+    <canvas bind:this={canvasCircle} width="1000" height="1000" style:width={"500px"} style:height={"500px"}></canvas>
+    <br />
+<input type="range" style:width={"100%"} bind:value={period} step="0.1" min="1" max="32768" />

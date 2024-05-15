@@ -1,4 +1,5 @@
-// @ts-expect-error
+import { functionMaker } from "./function-maker";
+
 declare var self: AudioWorkletGlobalScope;
 
 // @ts-expect-error
@@ -19,23 +20,29 @@ globalThis.exp = Math.exp
 // @ts-expect-error
 globalThis.pi = Math.PI
 
-class SineWaveProcessor extends AudioWorkletProcessor {
-    fn : (x : number) => number
+class CustomProcessor extends AudioWorkletProcessor {
+    fn : (x : number, slider : number) => number
+    slider = 1
+    phase = 0
     constructor() {
         super();
-        this.fn = (x) => x
+        // @ts-expect-error
+        this.fn = (x) => sin(x*pi*50)
 
         this.port.onmessage = (event) => {
-            if (event.data.fn) {
+            if (event.data.fn && typeof event.data.slider === "number") {
                 try {
-                    const tmpFn =  new Function(`x`, `return ${event.data.fn.replaceAll('\n', '+')}`) as (x : number) => number
-                    if (typeof tmpFn(0) === "number") {
+                    const tmpFn = functionMaker(event.data.fn) // new Function(`x, slider`, `return (${event.data.fn.replaceAll('\n', '+')})*0.1`) as (x : number, slider : number) => number
+                    if (typeof tmpFn(0,0) === "number") {
                         this.fn = tmpFn
+                        this.slider = event.data.slider
                         this.port.postMessage('clear')
                     } else {
+                        console.log('Error: Script does not take and output a number')
                         this.port.postMessage('Error: Script does not take and output a number')
                     }
                 } catch(e) {
+                    console.log('Error: ' + e)
                     this.port.postMessage('Error: ' + e)
                 }
             }
@@ -48,12 +55,16 @@ class SineWaveProcessor extends AudioWorkletProcessor {
         for (let channel = 0; channel < output.length; channel++) {
             const outputChannel = output[channel];
             for (let i = 0; i < outputChannel.length; i++) {
-                outputChannel[i] = this.fn(i)
+                const time = (i + this.phase);
+                outputChannel[i] = this.fn(time, this.slider);
             }
         }
+
+        // Update the phase to account for the processed samples
+        this.phase += output[0].length;
 
         return true;
     }
 }
 
-registerProcessor('custom-processor', SineWaveProcessor);
+registerProcessor('custom-processor', CustomProcessor);
