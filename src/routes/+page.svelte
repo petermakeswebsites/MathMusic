@@ -11,7 +11,6 @@
   import ErrorBox from "$lib/components/error-box.svelte"
   import { fly } from "svelte/transition"
   import Code from "$lib/components/ui/code.svelte"
-  import H3 from "$lib/components/ui/h3.svelte"
   import { ScrollArea } from "$lib/components/ui/scroll-area"
   import { GlobalMathList } from "$lib/function-maker"
   import * as Table from "$lib/components/ui/table"

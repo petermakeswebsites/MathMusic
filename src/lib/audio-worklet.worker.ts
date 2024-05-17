@@ -2,11 +2,6 @@ import { functionMaker } from "./function-maker"
 
 declare var self: AudioWorkletGlobalScope
 
-function delayerGenerator(
-  fn: (x: number, slider: number) => number,
-  slider: number,
-) {}
-
 class CustomProcessor extends AudioWorkletProcessor {
   fn: (x: number, slider: number) => number
   slider = 1
