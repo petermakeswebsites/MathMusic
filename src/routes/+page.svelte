@@ -130,7 +130,7 @@
                     </Table.Row>
                   </Table.Header>
                   <Table.Body>
-                    {#each Object.entries(GlobalMathList) as [code, { name, ex, value }]}
+                    {#each Object.entries(GlobalMathList) as [code, { name, ex }]}
                       <Table.Row>
                         <Table.Cell class="font-medium">{name}</Table.Cell>
                         <Table.Cell>
