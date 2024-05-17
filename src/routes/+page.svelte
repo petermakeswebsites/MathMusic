@@ -1,170 +1,187 @@
 <script lang="ts">
-  import Canvas from "./canvas.svelte";
+  import Canvas from "./canvas.svelte"
   import workletUrl from "../lib/audio-worklet.worker?url"
-  import { Globals } from "$lib/globals.svelte";
-  import * as Dialog from "$lib/components/ui/dialog";
+  import { Globals } from "$lib/globals.svelte"
+  import * as Dialog from "$lib/components/ui/dialog"
 
-  import { Textarea } from "$lib/components/ui/textarea";
-  import Switch from "$lib/components/ui/switch/switch.svelte";
-  import { untrack } from "svelte";
-  import Slider from "$lib/components/ui/slider/slider.svelte";
-  import ErrorBox from "$lib/components/error-box.svelte";
-  import { fly } from "svelte/transition";
-  import Code from "$lib/components/ui/code.svelte";
-  import H3 from "$lib/components/ui/h3.svelte";
-  import { ScrollArea } from "$lib/components/ui/scroll-area";
-  import { GlobalMathList } from "$lib/function-maker";
-  import * as Table from "$lib/components/ui/table";
-  import { HashManager } from "$lib/hash-change";
+  import { Textarea } from "$lib/components/ui/textarea"
+  import Switch from "$lib/components/ui/switch/switch.svelte"
+  import { untrack } from "svelte"
+  import Slider from "$lib/components/ui/slider/slider.svelte"
+  import ErrorBox from "$lib/components/error-box.svelte"
+  import { fly } from "svelte/transition"
+  import Code from "$lib/components/ui/code.svelte"
+  import H3 from "$lib/components/ui/h3.svelte"
+  import { ScrollArea } from "$lib/components/ui/scroll-area"
+  import { GlobalMathList } from "$lib/function-maker"
+  import * as Table from "$lib/components/ui/table"
+  import { HashManager } from "$lib/hash-change"
 
-    const hashManager = new HashManager()
+  const hashManager = new HashManager<string>()
 
-    $effect(() => {
-      hashManager.state = fn
-    })
+  $effect(() => {
+    hashManager.state = fn /*  */
+  })
 
-    let audioContext = $state<AudioContext| undefined>()
-    let slider = $state([1])
-    let node = $state<AudioWorkletNode | undefined>()
-    let fn = $state(hashManager.init ? hashManager.init : "sum(1,10,n => cos(n*x*pi*100)/n)")
-    let playing = $state(false)
+  let audioContext = $state<AudioContext | undefined>()
+  let slider = $state([1])
+  let node = $state<AudioWorkletNode | undefined>()
+  let fn = $state(
+    hashManager.init ? hashManager.init : "sum(1,10,n => cos(n*x*pi*100)/n)",
+  )
+  let playing = $state(false)
 
-    $effect(() => {
-        if (playing) {
-            untrack(() => {
-                if (audioContext) {
-                    audioContext.resume()
-                } else {
-                    init()
-                }
-            })
+  $effect(() => {
+    if (playing) {
+      untrack(() => {
+        if (audioContext) {
+          audioContext.resume()
         } else {
-            untrack(() => {
-                console.log("pausing?")
-                audioContext?.suspend()
-            })
+          init()
         }
-    })
-
-    let error = $state<string | undefined>()
-
-    async function init() {
-        audioContext = new globalThis.AudioContext();
-        audioContext.addEventListener("statechange", (d) => {
-            playing = audioContext?.state === "running"
-        })
-        Globals.SAMPLE_RATE = audioContext.sampleRate
-        await audioContext.audioWorklet.addModule(workletUrl);
-        node = new AudioWorkletNode(audioContext, 'custom-processor');
-        node.connect(audioContext.destination);
-        node.port.onmessage = ev => {
-            error = ev.data.error
-        }
+      })
+    } else {
+      untrack(() => {
+        console.log("pausing?")
+        audioContext?.suspend()
+      })
     }
+  })
 
-    let bufferData : number[] = []
+  let error = $state<string | undefined>()
 
-    $effect(() => {
-        if (node) {
-            if (bufferData instanceof Error) {
-                throw bufferData
-            }
-            node.port.postMessage({ fn: fn.trim(), slider: slider[0] });
-        }
+  async function init() {
+    audioContext = new globalThis.AudioContext()
+    audioContext.addEventListener("statechange", (d) => {
+      playing = audioContext?.state === "running"
     })
-</script>
-<div class="flex gap-4">
-    <div class="w-full relative block">
-        <Slider bind:value={slider} min={0} max={1} step={0.001} class="mt-4 mb-2" />
-        <p class="text-sm text-muted-foreground mb-4">Use the
-            <Code>
-                slider
-            </Code>
-        variable in your script.
-        <Dialog.Root>
-            <Dialog.Trigger><a href="#" class="font-medium text-primary underline underline-offset-4">
-                Find out more.
-              </a></Dialog.Trigger>
-            <Dialog.Content>
-              <Dialog.Header>
-                <Dialog.Title>User Guide</Dialog.Title>
-                <Dialog.Description>
-                    Write a function in javascript using <Code>x</Code> representing the time in seconds elapsed and <Code>slider</Code> representing the value of the slider from <Code>0</Code> to <Code>1</Code>.
-                    There is also a special <Code>sum</Code> function:
-                </Dialog.Description>
-                <Dialog.Description>
-                    <center class="my-4">
-                        <Code>sum(1,10,n => sin(n*x*pi*440)/n)</Code> <br />
-                        <span class="text-xs text-muted-foreground">Sum from 1 to 10 to make a sawtooth sound at 440hz - <a href="#" class="font-medium text-primary underline underline-offset-4">
-                            try it
-                          </a>.</span>
-                    </center>
-                </Dialog.Description>
-                <Dialog.Description>
-                  <ScrollArea class="h-[300px] mt-2 w-full rounded-md border p-0">
-                    <Table.Root>
-                        <Table.Header>
-                          <Table.Row>
-                            <Table.Head class="w-[200px]">Name</Table.Head>
-                            <Table.Head>Example</Table.Head>
-                          </Table.Row>
-                        </Table.Header>
-                        <Table.Body>
+    Globals.SAMPLE_RATE = audioContext.sampleRate
+    await audioContext.audioWorklet.addModule(workletUrl)
+    node = new AudioWorkletNode(audioContext, "custom-processor")
+    node.connect(audioContext.destination)
+    node.port.onmessage = (ev) => {
+      error = ev.data.error
+    }
+  }
 
-                    {#each Object.entries(GlobalMathList) as [code, {name, ex, value}]}
+  let bufferData: number[] = []
+
+  $effect(() => {
+    if (node) {
+      if (bufferData instanceof Error) {
+        throw bufferData
+      }
+      node.port.postMessage({ fn: fn.trim(), slider: slider[0] })
+    }
+  })
+</script>
+
+<div class="flex gap-4">
+  <div class="w-full relative block">
+    <Slider
+      bind:value={slider}
+      min={0}
+      max={1}
+      step={0.001}
+      class="mt-4 mb-2"
+    />
+    <p class="text-sm text-muted-foreground mb-4">
+      Use the
+      <Code>slider</Code>
+      variable in your script.
+      <Dialog.Root>
+        <Dialog.Trigger
+          ><a
+            href="#"
+            class="font-medium text-primary underline underline-offset-4"
+          >
+            Find out more.
+          </a></Dialog.Trigger
+        >
+        <Dialog.Content>
+          <Dialog.Header>
+            <Dialog.Title>User Guide</Dialog.Title>
+            <Dialog.Description>
+              Write a function in javascript using <Code>x</Code> representing the
+              time in seconds elapsed and <Code>slider</Code> representing the value
+              of the slider from <Code>0</Code> to <Code>1</Code>. There is also
+              a special <Code>sum</Code> function:
+            </Dialog.Description>
+            <Dialog.Description>
+              <center class="my-4">
+                <Code>sum(1,10,n => sin(n*x*pi*440)/n)</Code> <br />
+                <span class="text-xs text-muted-foreground"
+                  >Sum from 1 to 10 to make a sawtooth sound at 440hz - <a
+                    href="#"
+                    class="font-medium text-primary underline underline-offset-4"
+                  >
+                    try it
+                  </a>.</span
+                >
+              </center>
+            </Dialog.Description>
+            <Dialog.Description>
+              <ScrollArea class="h-[300px] mt-2 w-full rounded-md border p-0">
+                <Table.Root>
+                  <Table.Header>
                     <Table.Row>
+                      <Table.Head class="w-[200px]">Name</Table.Head>
+                      <Table.Head>Example</Table.Head>
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    {#each Object.entries(GlobalMathList) as [code, { name, ex, value }]}
+                      <Table.Row>
                         <Table.Cell class="font-medium">{name}</Table.Cell>
                         <Table.Cell>
-                            <Code>
+                          <Code>
                             {ex}
-                        </Code>
-
+                          </Code>
                         </Table.Cell>
                       </Table.Row>
                     {/each}
-                      
-                        </Table.Body>
-                      </Table.Root>
-                  </ScrollArea>
-                </Dialog.Description>
-                <Dialog.Footer>
-                    
-                  </Dialog.Footer>
-              </Dialog.Header>
-            </Dialog.Content>
-          </Dialog.Root>
-        
-          
+                  </Table.Body>
+                </Table.Root>
+              </ScrollArea>
+            </Dialog.Description>
+            <Dialog.Footer></Dialog.Footer>
+          </Dialog.Header>
+        </Dialog.Content>
+      </Dialog.Root>
     </p>
+  </div>
+  <div class="flex items-center h-fit gap-2 relative">
+    Play
+    <div class="mt-2 relative">
+      <Switch bind:checked={playing} class={playing ? "" : "pulsing"} />
     </div>
-    <div class="flex items-center h-fit gap-2 relative">
-        Play
-        <div class="mt-2 relative">
-            <Switch bind:checked={playing} class={playing ? "" : "pulsing"} />
-        </div>
-    </div>
+  </div>
 </div>
-<Textarea bind:value={fn} class={error ? "focus:ring-offset-red-400":""} />
+<Textarea bind:value={fn} class={error ? "focus:ring-offset-red-400" : ""} />
 {#if error}
-    <div class="fixed right-0 bottom-0 p-4">
-        <div  transition:fly>
-            <ErrorBox {error} />
-        </div>
+  <div class="fixed right-0 bottom-0 p-4">
+    <div transition:fly>
+      <ErrorBox {error} />
     </div>
+  </div>
 {/if}
 
 {#if fn !== undefined}
-    <Canvas slider={slider[0]} fn={fn.trim()} />
+  <Canvas slider={slider[0]} fn={fn.trim()} />
 {/if}
 
-  <center class="mt-4">
-    <p class="text-sm text-muted-foreground mb-4">
-        Created by
-        <a href="https://petermakeswebsites.co.uk" target="_blank" class="font-medium text-primary underline underline-offset-4">
-          Pete
-        </a>
-    </p>
-  </center>
+<center class="mt-4">
+  <p class="text-sm text-muted-foreground mb-4">
+    Created by
+    <a
+      href="https://petermakeswebsites.co.uk"
+      target="_blank"
+      class="font-medium text-primary underline underline-offset-4"
+    >
+      Pete
+    </a>
+  </p>
+</center>
 
 <style>
   :global(.pulsing) {
