@@ -28,6 +28,7 @@ class CustomProcessor extends AudioWorkletProcessor {
             this.fn = fn
             this.slider = event.data.slider
             this.changed = 5
+            this.phase = 0
             this.port.postMessage({ error: undefined })
           } else {
             console.log("Error: Script does not take and output a number")

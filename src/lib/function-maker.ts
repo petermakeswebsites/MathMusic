@@ -152,6 +152,6 @@ const sum = (start: number, end: number, fn: (n: number) => number) => {
 
 export function functionMaker(fn: string) {
   return eval(
-    `(x, slider) => { return (${fn.replaceAll("\n", "+")})*0.1 }`,
-  ) as (x: number, slider: number) => number
+    `(t, slider) => { return (${fn.replaceAll("\n", "+")})*0.1 }`,
+  ) as (t: number, slider: number) => number
 }

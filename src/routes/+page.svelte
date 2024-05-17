@@ -19,15 +19,17 @@
 
   const hashManager = new HashManager<string>()
 
+  hashManager.onstatechange = newState => fn = newState
+
   $effect(() => {
-    hashManager.state = fn /*  */
+    hashManager.state = fn
   })
 
   let audioContext = $state<AudioContext | undefined>()
   let slider = $state([1])
   let node = $state<AudioWorkletNode | undefined>()
   let fn = $state(
-    hashManager.init ? hashManager.init : "sum(1,10,n => cos(n*x*pi*100)/n)",
+    hashManager.init ? hashManager.init : "sum(1,10,n => cos(n*t*pi*100)/n)",
   )
   let playing = $state(false)
 
@@ -42,7 +44,6 @@
       })
     } else {
       untrack(() => {
-        console.log("pausing?")
         audioContext?.suspend()
       })
     }
@@ -65,6 +66,8 @@
   }
 
   let bufferData: number[] = []
+
+  let guideOpen = $state(hashManager.init ? false : true)
 
   $effect(() => {
     if (node) {
@@ -89,20 +92,18 @@
       Use the
       <Code>slider</Code>
       variable in your script.
-      <Dialog.Root>
-        <Dialog.Trigger
-          ><a
-            href="#"
+      <a
+            href="#" onclick={(e) => {e.preventDefault; guideOpen = true}}
             class="font-medium text-primary underline underline-offset-4"
           >
             Find out more.
-          </a></Dialog.Trigger
-        >
+          </a>
+      <Dialog.Root bind:open={guideOpen}>
         <Dialog.Content>
           <Dialog.Header>
             <Dialog.Title>User Guide</Dialog.Title>
             <Dialog.Description>
-              Write a function in javascript using <Code>x</Code> representing the
+              Write a function in javascript using <Code>t</Code> representing the
               time in seconds elapsed and <Code>slider</Code> representing the value
               of the slider from <Code>0</Code> to <Code>1</Code>. There is also
               a special <Code>sum</Code> function:
@@ -112,7 +113,8 @@
                 <Code>sum(1,10,n => sin(n*x*pi*440)/n)</Code> <br />
                 <span class="text-xs text-muted-foreground"
                   >Sum from 1 to 10 to make a sawtooth sound at 440hz - <a
-                    href="#"
+                    href="#%22sum(1%2C10%2Cn%20%3D%3E%20sin(n*t*pi*440)%2Fn)%22"
+                    onclick={(e) => { guideOpen = false; playing = true}}
                     class="font-medium text-primary underline underline-offset-4"
                   >
                     try it
