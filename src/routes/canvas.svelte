@@ -1,79 +1,105 @@
 <script lang="ts">
-  import { effect$anim, effect$debounce } from "$lib/effect-anim.svelte";
+  import Card from "$lib/components/ui/card/card.svelte";
+import Slider from "$lib/components/ui/slider/slider.svelte";
+    import { FrameRunner, effect$anim, effect$debounce } from "$lib/effect-anim.svelte";
+  import { Globals } from "$lib/globals.svelte";
+  import { onMount } from "svelte";
+    import MyWorker from '../lib/calculator.worker?worker';
+  import { responsiveCanvas } from "$lib/auto-canvas-size";
+    let { fn, slider }: { slider : number, fn : string} = $props()
 
-    let { audioContext, node, fn }: { audioContext: AudioContext, node :AudioNode , fn : string} = $props()
+    const frameRunner = new FrameRunner()
+
+    const worker = new MyWorker();
+    let buffer = $state<Float32Array | undefined>()
+    worker.addEventListener('message', (event) => {
+        buffer = new Float32Array(event.data);
+    })
+    
+    $effect(() => {
+        // Create an ArrayBuffer
+        const length = Globals.SAMPLE_RATE
+        const buffer = new ArrayBuffer(length * Float32Array.BYTES_PER_ELEMENT);
+
+        // Post the message to the worker with the buffer
+        const sets = { fn, slider, length, buffer }
+        worker.postMessage(sets, [buffer]);
+    })
+
     let canvas: HTMLCanvasElement
     let canvasCircle: HTMLCanvasElement
-    let period = $state(1000)
-    
-    const analyser = audioContext.createAnalyser();
-    node.connect(analyser);
+    let canvasCircle2 : HTMLCanvasElement
+    let period = $state([20000, 30000])
 
-    let buffer = $state<Float32Array | undefined>()
-
-    effect$debounce(() => {
-        fn;
-        return () => {
-            analyser.fftSize = 32768
-            const bufferLength = analyser.fftSize;
-            const data = new Float32Array(bufferLength)
-            analyser.getFloatTimeDomainData(data)
-            buffer = data
-            console.log(buffer)
-        }
-    }, 1000)
-
-    effect$anim(() => {
+    const redraw = () => {
         fn
         if (!buffer) return
         const ctx = canvas.getContext("2d")
-        
         const ctxCircle = canvasCircle.getContext("2d")
+        const ctxCircle2 = canvasCircle2.getContext("2d")
         const radiusMax = canvasCircle.width/2
         const center = canvasCircle.width/2
 
-        if (!ctx || !ctxCircle) {
+        if (!ctx || !ctxCircle || !ctxCircle2) {
             return
         }
 
-        const currentPeriod = period
+        const [start, end] = period
+        const periodSize = end - start
+        frameRunner.fn = () => {
+        if (!buffer) return
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctxCircle.clearRect(0, 0, canvasCircle.width, canvasCircle.height)
+        ctxCircle2.clearRect(0, 0, canvasCircle.width, canvasCircle.height)
 
-        return () => {
-            console.log('analysing..')
-            if (!buffer) return
-        
-            // Clear the canvas before drawing
-            ctx.clearRect(0, 0, canvas.width, canvas.height)
-            ctxCircle.clearRect(0, 0, canvasCircle.width, canvasCircle.height)
-        
-            ctx.beginPath()
-            ctxCircle.beginPath()
+        ctx.beginPath()
+        ctxCircle.beginPath()
+        ctxCircle2.beginPath()
 
-            for (let index = 0; index < currentPeriod && index < buffer.length; index++) {
-                const element = buffer[index]
-                const xpos = (canvas.width * index) / currentPeriod
-                const ypos = (canvas.height / 2) - ((canvas.height / 2) * element)
+        for (let index = start; index < end && index < buffer.length; index++) {
+            const element = buffer[index]
+            const xpos = (canvas.width * (index-start)) / periodSize
+            const ypos = (canvas.height / 2) - ((canvas.height / 2) * element)
 
-                const radianForEach = 2*Math.PI / currentPeriod
+            const radianForEach = 2*Math.PI / periodSize
 
-                const direction = [Math.cos(radianForEach*index)*radiusMax*element+center, Math.sin(radianForEach*index)*radiusMax*element+center] as const
-                if (index === 0) {
-                    ctx.moveTo(xpos, ypos)
-                    ctxCircle.moveTo(...direction)
-                } else {
-                    ctx.lineTo(xpos, ypos)
-                    ctxCircle.lineTo(...direction)
-                }
+            const direction = [Math.cos(radianForEach*index)*radiusMax*element+center, Math.sin(radianForEach*index)*radiusMax*element+center] as const
+            const direction2 = [Math.cos(radianForEach*index)*radiusMax*((element+1)/2)+center, Math.sin(radianForEach*index)*radiusMax*((element+1)/2)+center] as const
+            if (index === 0) {
+                ctx.moveTo(xpos, ypos)
+                ctxCircle.moveTo(...direction)
+                ctxCircle2.moveTo(...direction2)
+            } else {
+                ctx.lineTo(xpos, ypos)
+                ctxCircle.lineTo(...direction)
+                ctxCircle2.lineTo(...direction2)
             }
-
-
-            ctx.stroke()
-            ctxCircle.lineWidth=2
-            ctxCircle.stroke()
         }
-    })
+
+
+        ctx.lineWidth=2
+        ctx.stroke()
+        ctxCircle.lineWidth=2
+        ctxCircle.stroke()
+        ctxCircle2.lineWidth=2
+        ctxCircle2.stroke()
+        }
+    }
+
+    $effect(redraw)
+
     </script>
-    <canvas bind:this={canvas} width="500" height="200"></canvas>
-    <canvas bind:this={canvasCircle} width="1000" height="1000" style:width={"500px"} style:height={"500px"}></canvas>
+    <Card class="mt-2">
+        <canvas use:responsiveCanvas={redraw} bind:this={canvas} class="w-full h-40"></canvas>
+    </Card>
+    <div class="grid grid-cols-2 gap-2 mt-2">
+        <Card>
+            <canvas bind:this={canvasCircle} use:responsiveCanvas={redraw} class="w-full aspect-square"></canvas>
+        </Card>
+        <Card>
+            <canvas bind:this={canvasCircle2} use:responsiveCanvas={redraw} class="w-full aspect-square"></canvas>
+        </Card>
+    </div>
+
     <br />
-<input type="range" style:width={"100%"} bind:value={period} step="0.1" min="1" max="32768" />
+    <Slider bind:value={period} step={ 1 } min={1} max={32768} />
