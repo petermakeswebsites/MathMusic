@@ -1,10 +1,10 @@
-export function responsiveCanvas(node: HTMLCanvasElement, rerun?: () => void) {
+export function responsiveCanvas(node: HTMLCanvasElement, changeTo?: (w: number, h : number) => void) {
   let resizeObserver: ResizeObserver
 
   const resizeCanvas = () => {
-    node.width = node.clientWidth * window.devicePixelRatio
-    node.height = node.clientHeight * window.devicePixelRatio
-    rerun?.()
+    const width = node.clientWidth * window.devicePixelRatio
+    const height = node.clientHeight * window.devicePixelRatio
+    changeTo?.(width, height)
   }
 
   resizeCanvas() // Initial resize

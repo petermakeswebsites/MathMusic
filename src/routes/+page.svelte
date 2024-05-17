@@ -54,7 +54,7 @@
     audioContext.addEventListener("statechange", (d) => {
       playing = audioContext?.state === "running"
     })
-    console.log({workletUrl})
+    console.log({ workletUrl })
     await audioContext.audioWorklet.addModule(workletUrl)
     node = new AudioWorkletNode(audioContext, "custom-processor")
     node.connect(audioContext.destination)
@@ -121,7 +121,7 @@
       class="font-medium text-primary underline underline-offset-4"
     >
       Pete
-    </a>
+    </a> <span class="text-xs">/ 0.2</span>
   </p>
 </center>
 
