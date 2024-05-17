@@ -151,11 +151,7 @@ export const GlobalMathList = {
 }
 
 export function functionMaker(fn: string) {
- 
-
-  return eval(
-    `(t, slider) => { return (${fn.replaceAll("\n", "+")})*0.1 }`,
-  ) as (t: number, slider: number) => number
+  return eval(`(t, slider) => { return (${fn.replaceAll("\n", "+")})*0.1 }`) as (t: number, slider: number) => number
 }
 
 /**

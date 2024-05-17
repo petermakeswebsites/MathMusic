@@ -1,6 +1,8 @@
 # MathMusic
 
-MathMusic is an innovative web application that translates mathematical equations into sound, allowing users to explore the auditory landscape of mathematics. Users can input any mathematical function, adjust parameters via interactive controls, and hear the result as well as see the waveform.
+Just a fun little idea I had while I was learning about the fourier series - I wanted to hear the math! MathMusic is an innovative web application that translates mathematical equations into sound, allowing users to explore the auditory landscape of mathematics. Users can input any mathematical function, adjust parameters via interactive controls, and hear the result as well as see the waveform.
+
+[Demo](https://mathmusic.pmw.ltd)
 
 ## Features
 
@@ -20,11 +22,13 @@ Ensure you have the latest version of Node.js installed, which is required to ru
 ### Installation
 
 1. Install the dependencies:
+
    ```bash
    pnpm install
    ```
 
 2. Start the development server:
+
    ```bash
    pnpm run dev
    ```
@@ -44,10 +48,6 @@ Any update you make to the formula saves in the hash of the URL. So just share o
 - **Components**: The app uses Svelte components for UI elements like sliders, switches, and error displays.
 - **Audio Processing**: The core audio processing is handled by an AudioWorklet which runs in the browser's audio rendering thread.
 - **State Management**: Uses Svelte's reactivity and state management features to keep UI and audio state in sync.
-
-## Contributing
-
-Contributions to MathMusic are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) file for details on our code of conduct and the process for submitting pull requests to us.
 
 ## License
 

@@ -29,9 +29,7 @@ export class HashManager<T> {
   get init() {
     return this.#init
   }
-  constructor(
-    public readonly serialiser: Serialiser<T> = new JSONSerialiser<T>(),
-  ) {
+  constructor(public readonly serialiser: Serialiser<T> = new JSONSerialiser<T>()) {
     window.onhashchange = (e) => {
       const newSerial = window.location.hash.substring(1)
       if (newSerial === this.#serial) return

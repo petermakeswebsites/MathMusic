@@ -4,7 +4,6 @@
   import { ScrollArea } from "$lib/components/ui/scroll-area"
   import { GlobalMathList } from "$lib/function-maker"
   import * as Table from "$lib/components/ui/table"
-  import { Description } from "$lib/components/ui/alert"
   let {
     guideOpen = $bindable(),
     playing = $bindable(),
@@ -42,7 +41,7 @@
             <span class="text-xs text-muted-foreground"
               >Sum from 1 to 10 to make a sawtooth sound at 440hz - <a
                 href="#%7B%22fn%22%3A%22sum(1%2C10%2Cn%20%3D%3E%20sin(n*t*pi*440)%2Fn)%22%7D"
-                onclick={(e) => {
+                onclick={() => {
                   guideOpen = false
                   playing = true
                 }}

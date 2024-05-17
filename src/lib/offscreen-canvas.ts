@@ -3,7 +3,6 @@ import CalculatorUrl from "$lib/calculator.worker?worker"
 const Calculator = new CalculatorUrl()
 
 Calculator.onmessage = ({ data }: { data: ArrayBuffer }) => {
-  console.log({ buffer: data })
   buffer = new Float32Array(data)
   redraw()
 }
@@ -42,12 +41,7 @@ onmessage = (evt: {
     period = evt.data.period
     redraw()
   } else if ("width" in evt.data) {
-    const targetCanvas =
-      evt.data.canvas === 1
-        ? canvas
-        : evt.data.canvas === 2
-          ? canvasCircle
-          : canvasCircle2
+    const targetCanvas = evt.data.canvas === 1 ? canvas : evt.data.canvas === 2 ? canvasCircle : canvasCircle2
     if (!targetCanvas) return
     targetCanvas.width = evt.data.width
     targetCanvas.height = evt.data.height
@@ -68,7 +62,13 @@ function createBuffer(sampleRate: number, fn: string, slider: number) {
   Calculator.postMessage(sets, [buffer])
 }
 
+let frame = 0
 function redraw() {
+  cancelAnimationFrame(frame)
+  frame = requestAnimationFrame(render)
+}
+
+function render() {
   if (!canvas || !canvasCircle || !canvasCircle2) return
   if (!buffer) return
   if (!period) return
@@ -104,10 +104,8 @@ function redraw() {
       Math.sin(radianForEach * index) * radiusMax * element + center,
     ] as const
     const direction2 = [
-      Math.cos(radianForEach * index) * radiusMax * ((element + 1) / 2) +
-        center,
-      Math.sin(radianForEach * index) * radiusMax * ((element + 1) / 2) +
-        center,
+      Math.cos(radianForEach * index) * radiusMax * ((element + 1) / 2) + center,
+      Math.sin(radianForEach * index) * radiusMax * ((element + 1) / 2) + center,
     ] as const
     if (index === 0) {
       ctx.moveTo(xpos, ypos)

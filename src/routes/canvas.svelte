@@ -11,21 +11,18 @@
     sampleRate,
   }: { slider: number; fn: string; sampleRate: number | undefined } = $props()
 
-  $effect(() => {
-    // Create an ArrayBuffer
-  })
-
   let canvas: HTMLCanvasElement
   let canvasCircle: HTMLCanvasElement
   let canvasCircle2: HTMLCanvasElement
   let period = $state([20000, 30000])
+  
   const worker = new Worker(OffscreenCanvas, {type: "module"})
 
   onMount(() => {
     const canvas1 = canvas.transferControlToOffscreen()
     const canvas2 = canvasCircle.transferControlToOffscreen()
     const canvas3 = canvasCircle2.transferControlToOffscreen()
-    // Init
+
     worker.postMessage({ canvas1, canvas2, canvas3 }, [
       canvas1,
       canvas2,

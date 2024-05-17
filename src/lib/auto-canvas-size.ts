@@ -1,4 +1,4 @@
-export function responsiveCanvas(node: HTMLCanvasElement, changeTo?: (w: number, h : number) => void) {
+export function responsiveCanvas(node: HTMLCanvasElement, changeTo?: (w: number, h: number) => void) {
   let resizeObserver: ResizeObserver
 
   const resizeCanvas = () => {

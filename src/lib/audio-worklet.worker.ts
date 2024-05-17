@@ -38,11 +38,7 @@ class CustomProcessor extends AudioWorkletProcessor {
     }
   }
 
-  process(
-    inputs: Float32Array[][],
-    outputs: Float32Array[][],
-    parameters: Record<string, Float32Array>,
-  ): boolean {
+  process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Record<string, Float32Array>): boolean {
     const output = outputs[0]
     const outputChannel = output[0]
     if (!this.changed) {
@@ -57,8 +53,7 @@ class CustomProcessor extends AudioWorkletProcessor {
       )
       const delta = firstBitOfNextProcess - this.lastBit
       for (let i = 0; i < outputChannel.length; i++) {
-        outputChannel[i] =
-          this.lastBit + (delta * (i / outputChannel.length)) / this.changed
+        outputChannel[i] = this.lastBit + (delta * (i / outputChannel.length)) / this.changed
       }
       this.changed--
     }

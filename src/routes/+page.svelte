@@ -4,7 +4,7 @@
 
   import { Textarea } from "$lib/components/ui/textarea"
   import Switch from "$lib/components/ui/switch/switch.svelte"
-  import { untrack } from "svelte"
+  
   import Slider from "$lib/components/ui/slider/slider.svelte"
   import ErrorBox from "$lib/components/error-box.svelte"
   import { fly } from "svelte/transition"
@@ -13,7 +13,6 @@
   import Description from "./description.svelte"
 
   const hashManager = new HashManager<{ fn: string }>()
-
   hashManager.onstatechange = (newState) => (fn = newState.fn)
 
   $effect(() => {
@@ -21,7 +20,6 @@
   })
 
   let audioContext = $state<AudioContext | undefined>()
-  $effect(() => console.log(audioContext))
   let slider = $state([1])
   let node = $state<AudioWorkletNode | undefined>()
   let fn = $state(
@@ -32,18 +30,14 @@
   let playing = $state(false)
 
   $effect(() => {
-    if (playing) {
-      untrack(() => {
-        if (audioContext) {
-          audioContext.resume()
-        } else {
-          init()
-        }
-      })
+    if (!audioContext) {
+      init()
     } else {
-      untrack(() => {
-        audioContext?.suspend()
-      })
+      if (playing) {
+        audioContext.resume()
+      } else {
+        audioContext.suspend()
+      }
     }
   })
 
@@ -51,10 +45,9 @@
 
   async function init() {
     audioContext = new globalThis.AudioContext()
-    audioContext.addEventListener("statechange", (d) => {
+    audioContext.addEventListener("statechange", () => {
       playing = audioContext?.state === "running"
     })
-    console.log({ workletUrl })
     await audioContext.audioWorklet.addModule(workletUrl)
     node = new AudioWorkletNode(audioContext, "custom-processor")
     node.connect(audioContext.destination)
@@ -63,15 +56,11 @@
     }
   }
 
-  let bufferData: number[] = []
-
+  // Guide is open automatically if no hash to start with
   let guideOpen = $state(hashManager.init ? false : true)
 
   $effect(() => {
     if (node) {
-      if (bufferData instanceof Error) {
-        throw bufferData
-      }
       node.port.postMessage({ fn: fn.trim(), slider: slider[0] })
     }
   })
@@ -121,7 +110,7 @@
       class="font-medium text-primary underline underline-offset-4"
     >
       Pete
-    </a> <span class="text-xs">/ 0.2</span>
+    </a> <span class="text-xs">/ 0.4</span>
   </p>
 </center>
 
