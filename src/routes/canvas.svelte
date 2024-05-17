@@ -1,14 +1,15 @@
 <script lang="ts">
   import Card from "$lib/components/ui/card/card.svelte"
   import Slider from "$lib/components/ui/slider/slider.svelte"
-  import {
-    FrameRunner,
-  } from "$lib/effect-anim.svelte"
-  import { Globals } from "$lib/globals.svelte"
+  import { FrameRunner } from "$lib/effect-anim.svelte"
   import { onMount } from "svelte"
   import MyWorker from "../lib/calculator.worker?worker"
   import { responsiveCanvas } from "$lib/auto-canvas-size"
-  let { fn, slider }: { slider: number; fn: string } = $props()
+  let {
+    fn,
+    slider,
+    sampleRate,
+  }: { slider: number; fn: string; sampleRate: number | undefined } = $props()
 
   const frameRunner = new FrameRunner()
 
@@ -20,7 +21,8 @@
 
   $effect(() => {
     // Create an ArrayBuffer
-    const length = Globals.SAMPLE_RATE
+    if (sampleRate === undefined) return
+    const length = sampleRate
     const buffer = new ArrayBuffer(length * Float32Array.BYTES_PER_ELEMENT)
 
     // Post the message to the worker with the buffer
@@ -120,4 +122,11 @@
 </div>
 
 <br />
-<Slider bind:value={period} step={1} min={1} max={32768} />
+{#if sampleRate}
+  <p class="text-sm text-muted-foreground mb-4">
+    Change the viewing range of the graphs between 0 seconds (min) and 1 second
+    (max)
+  </p>
+  <!-- <Slider bind:value={period} step={1} min={1} max={32768} /> -->
+  <Slider bind:value={period} step={1} min={0} max={sampleRate} />
+{/if}

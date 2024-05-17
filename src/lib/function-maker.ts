@@ -28,6 +28,15 @@ const {
   atan2: atan,
 } = Math
 
+const sum = (start: number, end: number, fn: (n: number) => number) => {
+  let rtn = 0
+  while (start <= end) {
+    rtn += fn(start)
+    start++
+  }
+  return rtn
+}
+
 export const GlobalMathList = {
   pi: {
     name: "PI (π)",
@@ -141,17 +150,45 @@ export const GlobalMathList = {
   },
 }
 
-const sum = (start: number, end: number, fn: (n: number) => number) => {
-  let rtn = 0
-  while (start <= end) {
-    rtn += fn(start)
-    start++
-  }
-  return rtn
-}
-
 export function functionMaker(fn: string) {
+ 
+
   return eval(
     `(t, slider) => { return (${fn.replaceAll("\n", "+")})*0.1 }`,
   ) as (t: number, slider: number) => number
+}
+
+/**
+ * Naughty hack to get around tree shaking issue
+ */
+// @ts-expect-error
+globalThis.mathFns = {
+  sin,
+  PI: pi,
+  E: e,
+  cos,
+  tan,
+  pow,
+  sqrt,
+  exp,
+  log10,
+  log2,
+  log,
+  log1p,
+  expm1,
+  cosh,
+  sinh,
+  tanh,
+  acosh,
+  asinh,
+  atanh,
+  hypot,
+  trunc,
+  cbrt,
+  round,
+  abs,
+  acos,
+  asin,
+  atan,
+  sum,
 }

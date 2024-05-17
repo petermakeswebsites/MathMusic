@@ -1,8 +1,6 @@
 <script lang="ts">
   import Canvas from "./canvas.svelte"
-  import workletUrl from "../lib/audio-worklet.worker?url"
-  import { Globals } from "$lib/globals.svelte"
-  import * as Dialog from "$lib/components/ui/dialog"
+  import workletUrl from "../lib/audio-worklet.worker?worker&url"
 
   import { Textarea } from "$lib/components/ui/textarea"
   import Switch from "$lib/components/ui/switch/switch.svelte"
@@ -10,25 +8,26 @@
   import Slider from "$lib/components/ui/slider/slider.svelte"
   import ErrorBox from "$lib/components/error-box.svelte"
   import { fly } from "svelte/transition"
-  import Code from "$lib/components/ui/code.svelte"
-  import { ScrollArea } from "$lib/components/ui/scroll-area"
-  import { GlobalMathList } from "$lib/function-maker"
-  import * as Table from "$lib/components/ui/table"
+
   import { HashManager } from "$lib/hash-change"
+  import Description from "./description.svelte"
 
-  const hashManager = new HashManager<string>()
+  const hashManager = new HashManager<{ fn: string }>()
 
-  hashManager.onstatechange = newState => fn = newState
+  hashManager.onstatechange = (newState) => (fn = newState.fn)
 
   $effect(() => {
-    hashManager.state = fn
+    hashManager.state = { fn }
   })
 
   let audioContext = $state<AudioContext | undefined>()
+  $effect(() => console.log(audioContext))
   let slider = $state([1])
   let node = $state<AudioWorkletNode | undefined>()
   let fn = $state(
-    hashManager.init ? hashManager.init : "sum(1,10,n => cos(n*t*pi*100)/n)",
+    hashManager.init?.fn
+      ? hashManager.init.fn
+      : "sum(1,10,n => cos(n*t*pi*100)/n)",
   )
   let playing = $state(false)
 
@@ -55,7 +54,7 @@
     audioContext.addEventListener("statechange", (d) => {
       playing = audioContext?.state === "running"
     })
-    Globals.SAMPLE_RATE = audioContext.sampleRate
+    console.log({workletUrl})
     await audioContext.audioWorklet.addModule(workletUrl)
     node = new AudioWorkletNode(audioContext, "custom-processor")
     node.connect(audioContext.destination)
@@ -87,69 +86,7 @@
       step={0.001}
       class="mt-4 mb-2"
     />
-    <p class="text-sm text-muted-foreground mb-4">
-      Use the
-      <Code>slider</Code>
-      variable in your script.
-      <a
-            href="#" onclick={(e) => {e.preventDefault; guideOpen = true}}
-            class="font-medium text-primary underline underline-offset-4"
-          >
-            Find out more.
-          </a>
-      <Dialog.Root bind:open={guideOpen}>
-        <Dialog.Content>
-          <Dialog.Header>
-            <Dialog.Title>User Guide</Dialog.Title>
-            <Dialog.Description>
-              Write a function in javascript using <Code>t</Code> representing the
-              time in seconds elapsed and <Code>slider</Code> representing the value
-              of the slider from <Code>0</Code> to <Code>1</Code>. There is also
-              a special <Code>sum</Code> function:
-            </Dialog.Description>
-            <Dialog.Description>
-              <center class="my-4">
-                <Code>sum(1,10,n => sin(n*x*pi*440)/n)</Code> <br />
-                <span class="text-xs text-muted-foreground"
-                  >Sum from 1 to 10 to make a sawtooth sound at 440hz - <a
-                    href="#%22sum(1%2C10%2Cn%20%3D%3E%20sin(n*t*pi*440)%2Fn)%22"
-                    onclick={(e) => { guideOpen = false; playing = true}}
-                    class="font-medium text-primary underline underline-offset-4"
-                  >
-                    try it
-                  </a>.</span
-                >
-              </center>
-            </Dialog.Description>
-            <Dialog.Description>
-              <ScrollArea class="h-[300px] mt-2 w-full rounded-md border p-0">
-                <Table.Root>
-                  <Table.Header>
-                    <Table.Row>
-                      <Table.Head class="w-[200px]">Name</Table.Head>
-                      <Table.Head>Example</Table.Head>
-                    </Table.Row>
-                  </Table.Header>
-                  <Table.Body>
-                    {#each Object.entries(GlobalMathList) as [code, { name, ex }]}
-                      <Table.Row>
-                        <Table.Cell class="font-medium">{name}</Table.Cell>
-                        <Table.Cell>
-                          <Code>
-                            {ex}
-                          </Code>
-                        </Table.Cell>
-                      </Table.Row>
-                    {/each}
-                  </Table.Body>
-                </Table.Root>
-              </ScrollArea>
-            </Dialog.Description>
-            <Dialog.Footer></Dialog.Footer>
-          </Dialog.Header>
-        </Dialog.Content>
-      </Dialog.Root>
-    </p>
+    <Description bind:playing bind:guideOpen />
   </div>
   <div class="flex items-center h-fit gap-2 relative">
     Play
@@ -168,7 +105,11 @@
 {/if}
 
 {#if fn !== undefined}
-  <Canvas slider={slider[0]} fn={fn.trim()} />
+  <Canvas
+    slider={slider[0]}
+    fn={fn.trim()}
+    sampleRate={audioContext?.sampleRate}
+  />
 {/if}
 
 <center class="mt-4">

@@ -6,7 +6,7 @@ class CustomProcessor extends AudioWorkletProcessor {
   fn: (x: number, slider: number) => number
   slider = 1
   phase = 0
-  fadeDuration = 44100 // Number of samples to fade over (e.g., 1 second at 44100 samples per second)
+  fadeDuration = sampleRate // Number of samples to fade over (e.g., 1 second at 44100 samples per second)
   fadeProgress = 0
   lastBit: number = 0
   changed = 0
